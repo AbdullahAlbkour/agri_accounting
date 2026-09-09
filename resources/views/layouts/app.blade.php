@@ -166,7 +166,7 @@
                 </a>
             </li>
             <li>
-                <a href="{{ route('seasons.index') }}" class="{{ request()->routeIs('seasons.*') ? 'active' : '' }}">
+                <a href="{{ route('seasons.index') }}" class="{{ request()->routeIs('seasons.*') && ! request()->routeIs('seasons.archive') ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>المواسم الزراعية</span>
                 </a>
@@ -196,9 +196,27 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('buyer-payments.index') }}" class="{{ request()->routeIs('buyer-payments.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-money-check-dollar"></i>
+                    <span>سندات القبض والدفعات</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('seasons.archive') }}" class="{{ request()->routeIs('seasons.archive') ? 'active' : '' }}">
+                    <i class="fa-solid fa-box-archive"></i>
+                    <span>أرشيف المواسم</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('reports.index') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-chart-line"></i>
                     <span>التقارير والحسابات</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-gears"></i>
+                    <span>الإعدادات والنسخ الاحتياطي</span>
                 </a>
             </li>
         </ul>
@@ -214,18 +232,60 @@
                 <h5 class="mb-0 fw-bold text-secondary">النظام المحاسبي الزراعي</h5>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill d-none d-md-inline">
                     <i class="fa-solid fa-circle text-success me-1 font-size-xs"></i> النظام نشط
                 </span>
+
+                @auth
+                <div class="dropdown">
+                    <button class="btn btn-light border rounded-pill px-3 dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
+                        <i class="fa-solid fa-circle-user text-success me-1"></i> {{ auth()->user()->name }}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-start shadow">
+                        <li><span class="dropdown-item-text small text-muted" dir="ltr">{{ auth()->user()->email }}</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="{{ route('settings.index') }}">
+                                <i class="fa-solid fa-gears me-1"></i> الإعدادات والنسخ الاحتياطي
+                            </a>
+                        </li>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fa-solid fa-right-from-bracket me-1"></i> تسجيل الخروج
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                @endauth
             </div>
         </header>
 
         <main class="content-area">
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show no-print" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('warning'))
+                <div class="alert alert-warning alert-dismissible fade show no-print" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-1"></i> {{ session('warning') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>
 
     <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js للمخططات البيانية التفاعلية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    @stack('scripts')
 </body>
 </html>

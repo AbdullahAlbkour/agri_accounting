@@ -64,5 +64,11 @@
             </tbody>
         </table>
     </div>
+
+    @if($crops->hasPages())
+    <div class="card-footer bg-white py-3">
+        {{ $crops->links() }}
+    </div>
+    @endif
 </div>
 @endsection

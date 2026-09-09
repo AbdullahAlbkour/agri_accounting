@@ -18,6 +18,26 @@
 </div>
 @endif
 
+<!-- فلترة حسب الموسم -->
+<div class="card stat-card p-3 mb-3 bg-light border no-print">
+    <form action="{{ route('expenses.index') }}" method="GET" class="row g-2 align-items-end">
+        <div class="col-md-8">
+            <label class="form-label fw-semibold mb-1">فلترة حسب الموسم الزراعي</label>
+            <select name="season_id" class="form-select">
+                <option value="">-- كل المواسم --</option>
+                @foreach($seasons as $s)
+                    <option value="{{ $s->id }}" {{ (string) request('season_id') === (string) $s->id ? 'selected' : '' }}>
+                        {{ $s->name }} ({{ $s->crop->name ?? '' }}){{ $s->isClosed() ? ' — مغلق' : '' }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-dark w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> عرض</button>
+        </div>
+    </form>
+</div>
+
 <div class="card stat-card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -39,7 +59,12 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $expense->date }}</td>
-                    <td><strong>{{ $expense->season->name ?? '-' }}</strong></td>
+                    <td>
+                        <strong>{{ $expense->season->name ?? '-' }}</strong>
+                        @if($expense->season && $expense->season->isClosed())
+                            <span class="badge bg-secondary-subtle text-secondary ms-1" title="موسم مغلق - الحركات مجمّدة"><i class="fa-solid fa-lock"></i> مغلق</span>
+                        @endif
+                    </td>
                     <td><span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">{{ $expense->category->name ?? 'عام' }}</span></td>
                     <td class="font-monospace fw-bold text-danger">{{ number_format($expense->amount, 2) }} {{ $expense->currency }}</td>
                     <td>{{ $expense->exchange_rate ?? 1 }}</td>
@@ -48,6 +73,9 @@
                     </td>
                     <td>{{ $expense->notes ?? '-' }}</td>
                     <td class="text-center">
+                        @if($expense->season && $expense->season->isClosed())
+                            <span class="badge bg-light text-secondary border"><i class="fa-solid fa-lock me-1"></i> مؤرشف</span>
+                        @else
                         <div class="btn-group">
                             <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
                                 <i class="fa-solid fa-pen-to-square"></i>
@@ -60,6 +88,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </td>
                 </tr>
                 @empty
@@ -68,5 +97,11 @@
             </tbody>
         </table>
     </div>
+
+    @if($expenses->hasPages())
+    <div class="card-footer bg-white py-3">
+        {{ $expenses->links() }}
+    </div>
+    @endif
 </div>
 @endsection
