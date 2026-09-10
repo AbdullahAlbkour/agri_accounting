@@ -93,3 +93,40 @@ Route::get('/run-seed', function () {
     Artisan::call('db:seed', ['--force' => true]);
     return 'Seeder executed successfully!';
 });
+
+
+Route::get('/setup-admin-force', function () {
+    $user = \App\Models\User::firstOrNew(['email' => 'admin@agri.local']);
+    $user->name = 'مدير النظام';
+    $user->username = 'admin';
+    $user->password = \Illuminate\Support\Facades\Hash::make('password');
+    $user->role = defined('\App\Models\User::ROLE_ADMIN') ? \App\Models\User::ROLE_ADMIN : 'admin';
+    $user->is_active = true;
+    $user->save();
+
+    return 'تم إنشاء حساب المدير وتعيين كلمة المرور بنجاح!';
+});
+
+Route::get('/login-as-admin', function () {
+    // 1. جلب المستخدم أو إنشاؤه بصلاحيات الأدمن
+    $user = \App\Models\User::firstOrNew(['username' => 'admin']);
+    $user->name = 'مدير النظام';
+    $user->email = 'admin@agri.local';
+    $user->username = 'admin';
+    $user->password = \Illuminate\Support\Facades\Hash::make('password');
+    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'role')) {
+        $user->role = defined('\App\Models\User::ROLE_ADMIN') ? \App\Models\User::ROLE_ADMIN : 'admin';
+    }
+    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_admin')) {
+        $user->is_admin = 1;
+    }
+    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'is_active')) {
+        $user->is_active = 1;
+    }
+    $user->save();
+
+    // 2. تسجيل الدخول فورياً وتحويلك للوحة التحكم
+    \Illuminate\Support\Facades\Auth::login($user);
+
+    return redirect('/dashboard'); // أو المسار الرئيسي للوحة التحكم
+});
