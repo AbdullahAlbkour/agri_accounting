@@ -6,7 +6,7 @@
         <div class="card stat-card p-4">
             <h5 class="fw-bold mb-3 text-primary"><i class="fa-solid fa-pen-to-square me-2"></i>تعديل بيانات المصروف</h5>
             
-            <form action="{{ route('expenses.update', $expense) }}" method="POST">
+            <form action="{{ route('expenses.update', $expense) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 <div class="row g-3">
@@ -58,6 +58,34 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">تفاصيل / ملاحظات إضافية</label>
                         <input type="text" name="notes" class="form-control" value="{{ old('notes', $expense->notes) }}">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-paperclip me-1"></i> صورة فاتورة الشراء / إيصال الصرف
+                        </label>
+
+                        @if($expense->hasReceipt())
+                        <div class="d-flex align-items-center gap-3 p-3 mb-2 bg-light border rounded">
+                            @include('partials.receipt-thumb', ['model' => $expense, 'title' => 'فاتورة المصروف'])
+                            <div class="small">
+                                <div class="fw-semibold">المرفق الحالي</div>
+                                <a href="{{ $expense->receiptUrl() }}" target="_blank" class="text-decoration-none">فتح / تحميل</a>
+                            </div>
+                            <div class="form-check ms-auto">
+                                <input class="form-check-input" type="checkbox" name="remove_receipt" value="1" id="remove_receipt">
+                                <label class="form-check-label text-danger" for="remove_receipt">حذف المرفق الحالي</label>
+                            </div>
+                        </div>
+                        @endif
+
+                        <input type="file" name="receipt_image" accept="image/*,application/pdf"
+                               class="form-control @error('receipt_image') is-invalid @enderror">
+                        <small class="text-muted">
+                            اختيار ملف جديد يستبدل المرفق الحالي. الصيغ المدعومة: JPG, PNG, WEBP, GIF, PDF —
+                            بحد أقصى {{ round(config('agri.attachments.max_size_kb') / 1024, 1) }} ميغابايت.
+                        </small>
+                        @error('receipt_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 

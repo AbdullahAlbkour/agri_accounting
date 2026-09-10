@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -109,7 +109,7 @@ class RegistrationTest extends TestCase
         $this->post(route('password.email'), ['email' => 'farmer.one@gmail.com'])
             ->assertSessionHas('success');
 
-        Notification::assertSentTo($user, ResetPassword::class);
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
     }
 
     public function test_password_can_be_reset_with_a_valid_token(): void

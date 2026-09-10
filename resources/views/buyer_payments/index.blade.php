@@ -111,6 +111,7 @@
                     <th>ما يعادله ($)</th>
                     <th>مرتبطة بفاتورة</th>
                     <th>ملاحظات</th>
+                    <th class="text-center" style="width: 70px;">المرفق</th>
                     <th class="text-center no-print" style="width: 120px;">الإجراءات</th>
                 </tr>
             </thead>
@@ -130,6 +131,9 @@
                         @endif
                     </td>
                     <td class="small text-muted">{{ $payment->notes ?? '-' }}</td>
+                    <td class="text-center">
+                        @include('partials.receipt-thumb', ['model' => $payment, 'title' => 'سند ' . ($payment->receipt_number ?? '')])
+                    </td>
                     <td class="text-center no-print">
                         <div class="btn-group">
                             <a href="{{ route('buyer-payments.receipt', $payment) }}" target="_blank" class="btn btn-sm btn-outline-primary" title="طباعة السند">
@@ -146,7 +150,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="text-center py-4 text-muted">لا توجد سندات قبض مسجلة ضمن النطاق المحدد.</td></tr>
+                <tr><td colspan="9" class="text-center py-4 text-muted">لا توجد سندات قبض مسجلة ضمن النطاق المحدد.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -163,7 +167,7 @@
 <div class="modal fade" id="newPaymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <form action="{{ route('buyer-payments.store') }}" method="POST">
+            <form action="{{ route('buyer-payments.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="redirect_to" value="{{ route('buyer-payments.index') }}">
 
@@ -212,6 +216,17 @@
                         <div class="col-12">
                             <label class="form-label fw-semibold">ملاحظات</label>
                             <textarea name="notes" class="form-control" rows="2" placeholder="مثال: دفعة نقدية عن فواتير موسم القمح">{{ old('notes') }}</textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="fa-solid fa-paperclip me-1"></i> صورة سند القبض / الإشعار البنكي أو الحوالة (اختياري)
+                            </label>
+                            <input type="file" name="receipt_image" accept="image/*,application/pdf" class="form-control">
+                            <small class="text-muted">
+                                الصيغ المدعومة: JPG, PNG, WEBP, GIF, PDF — بحد أقصى
+                                {{ round(config('agri.attachments.max_size_kb') / 1024, 1) }} ميغابايت.
+                            </small>
                         </div>
                     </div>
                 </div>

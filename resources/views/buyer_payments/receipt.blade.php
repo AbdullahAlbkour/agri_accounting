@@ -92,6 +92,22 @@
     </div>
     @endif
 
+    @if($buyerPayment->hasReceipt())
+    <div class="border rounded p-3 mb-3">
+        <div class="fw-bold mb-2"><i class="fa-solid fa-paperclip me-1"></i> المرفق (صورة السند / الإشعار البنكي)</div>
+        @if($buyerPayment->receiptIsPdf())
+            <a href="{{ $buyerPayment->receiptUrl() }}" target="_blank" class="btn btn-outline-danger">
+                <i class="fa-solid fa-file-pdf me-1"></i> فتح ملف PDF المرفق
+            </a>
+        @else
+            <img src="{{ $buyerPayment->receiptUrl() }}" alt="مرفق السند" class="img-fluid rounded border" style="max-height: 320px;">
+            <div class="mt-2 no-print">
+                <a href="{{ $buyerPayment->receiptUrl() }}" target="_blank" class="small">فتح المرفق بالحجم الكامل</a>
+            </div>
+        @endif
+    </div>
+    @endif
+
     <div class="sign">
         <div>توقيع المستلم</div>
         <div>توقيع الدافع</div>

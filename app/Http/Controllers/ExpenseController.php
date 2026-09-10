@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\GuardsClosedSeasons;
+use App\Http\Controllers\Concerns\HandlesAttachments;
 use App\Http\Controllers\Concerns\NormalizesNumbers;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -11,7 +12,7 @@ use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
-    use GuardsClosedSeasons, NormalizesNumbers;
+    use GuardsClosedSeasons, HandlesAttachments, NormalizesNumbers;
 
     public function index(Request $request)
     {
@@ -49,7 +50,7 @@ class ExpenseController extends Controller
             'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
-        $request->validate($this->rules());
+        $request->validate($this->rules(), $this->attachmentMessages());
 
         // الموسم يُجلب ضمن نطاق المستخدم الحالي لمنع الوصول لبيانات مزارع آخر
         $season = Season::find($request->season_id);
@@ -71,6 +72,7 @@ class ExpenseController extends Controller
             'exchange_rate' => $request->exchange_rate ?: 1,
             'date' => $request->date,
             'notes' => $request->notes,
+            'receipt_image' => $this->storeAttachment($request, 'expenses'),
         ]);
 
         return redirect()->route('expenses.index')->with('success', 'تم تسجيل المصروف بنجاح.');
@@ -99,7 +101,7 @@ class ExpenseController extends Controller
             'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
-        $request->validate($this->rules());
+        $request->validate($this->rules(), $this->attachmentMessages());
 
         $season = Season::find($request->season_id);
 
@@ -112,7 +114,7 @@ class ExpenseController extends Controller
             return back()->withInput()->with('error', $message);
         }
 
-        $expense->update([
+        $data = [
             'season_id' => $season->id,
             'expense_category_id' => $this->resolveCategory($request->category_name, $expense->user_id ?? $season->user_id)->id,
             'amount' => $request->amount,
@@ -120,7 +122,18 @@ class ExpenseController extends Controller
             'exchange_rate' => $request->exchange_rate ?: 1,
             'date' => $request->date,
             'notes' => $request->notes,
-        ]);
+        ];
+
+        // استبدال المرفق أو حذفه حسب طلب المستخدم
+        if ($path = $this->storeAttachment($request, 'expenses')) {
+            $expense->deleteReceiptFile();
+            $data['receipt_image'] = $path;
+        } elseif ($request->boolean('remove_receipt')) {
+            $expense->deleteReceiptFile();
+            $data['receipt_image'] = null;
+        }
+
+        $expense->update($data);
 
         return redirect()->route('expenses.index')->with('success', 'تم تحديث بيانات المصروف بنجاح.');
     }
@@ -149,6 +162,7 @@ class ExpenseController extends Controller
             'exchange_rate' => 'nullable|numeric|min:0.0001',
             'date' => 'required|date',
             'notes' => 'nullable|string',
+            'receipt_image' => $this->attachmentRule(),
         ];
     }
 

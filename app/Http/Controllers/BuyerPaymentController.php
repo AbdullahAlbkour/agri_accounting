@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\HandlesAttachments;
 use App\Http\Controllers\Concerns\NormalizesNumbers;
 use App\Models\BuyerPayment;
 use App\Models\Sale;
@@ -10,7 +11,7 @@ use Illuminate\Http\Request;
 
 class BuyerPaymentController extends Controller
 {
-    use NormalizesNumbers;
+    use HandlesAttachments, NormalizesNumbers;
 
     public function __construct(private BuyerAccountService $accounts) {}
 
@@ -66,7 +67,8 @@ class BuyerPaymentController extends Controller
             'exchange_rate' => 'nullable|numeric|min:0.0001',
             'date' => 'required|date',
             'notes' => 'nullable|string',
-        ], [
+            'receipt_image' => $this->attachmentRule(),
+        ], $this->attachmentMessages() + [
             'buyer_name.required' => 'اسم التاجر مطلوب.',
             'amount.required' => 'مبلغ الدفعة مطلوب.',
             'amount.min' => 'مبلغ الدفعة يجب أن يكون أكبر من صفر.',
@@ -99,6 +101,7 @@ class BuyerPaymentController extends Controller
             'exchange_rate' => $validated['exchange_rate'] ?? 1,
             'date' => $validated['date'],
             'notes' => $validated['notes'] ?? null,
+            'receipt_image' => $this->storeAttachment($request, 'payments'),
         ]);
 
         $payment->update(['receipt_number' => 'REC-'.str_pad((string) $payment->id, 5, '0', STR_PAD_LEFT)]);

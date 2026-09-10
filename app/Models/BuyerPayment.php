@@ -3,12 +3,13 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToUser;
+use App\Models\Concerns\HasReceiptAttachment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BuyerPayment extends Model
 {
-    use BelongsToUser, HasFactory;
+    use BelongsToUser, HasFactory, HasReceiptAttachment;
 
     protected $guarded = [];
 

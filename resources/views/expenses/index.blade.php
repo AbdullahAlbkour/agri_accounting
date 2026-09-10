@@ -61,6 +61,7 @@
                     <th>سعر الصرف</th>
                     <th>المعادل بالدولار</th>
                     <th>ملاحظات</th>
+                    <th class="text-center" style="width: 70px;">المرفق</th>
                     <th style="width: 140px;" class="text-center">الإجراءات</th>
                 </tr>
             </thead>
@@ -86,6 +87,9 @@
                     </td>
                     <td>{{ $expense->notes ?? '-' }}</td>
                     <td class="text-center">
+                        @include('partials.receipt-thumb', ['model' => $expense, 'title' => 'فاتورة: ' . ($expense->category->name ?? 'مصروف')])
+                    </td>
+                    <td class="text-center">
                         @if($expense->season && $expense->season->isClosed())
                             <span class="badge bg-light text-secondary border"><i class="fa-solid fa-lock me-1"></i> مؤرشف</span>
                         @else
@@ -105,7 +109,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="9" class="text-center py-4 text-muted">لا توجد مصاريف مسجلة حتى الآن.</td></tr>
+                <tr><td colspan="10" class="text-center py-4 text-muted">لا توجد مصاريف مسجلة حتى الآن.</td></tr>
                 @endforelse
             </tbody>
         </table>
