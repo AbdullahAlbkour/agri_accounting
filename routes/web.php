@@ -17,6 +17,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SeasonController;
 use Illuminate\Support\Facades\Route;
 
+ use Illuminate\Support\Facades\Artisan;
 /*
 |--------------------------------------------------------------------------
 | مسارات المصادقة (تسجيل الدخول، إنشاء حساب، استعادة كلمة المرور)
@@ -81,4 +82,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('seasons', SeasonController::class);
     Route::resource('expenses', ExpenseController::class)->except(['show']);
     Route::resource('sales', SaleController::class)->except(['show']);
+
+
+   
+});
+
+
+
+Route::get('/run-seed', function () {
+    Artisan::call('db:seed', ['--force' => true]);
+    return 'Seeder executed successfully!';
 });
