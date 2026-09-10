@@ -31,12 +31,7 @@
             <strong class="font-monospace">{{ $thresholds['season_idle_days'] }} يوم</strong>
         </div>
     </div>
-    <p class="text-muted small mb-0 mt-2 text-center">
-        <i class="fa-solid fa-circle-info me-1"></i>
-        يمكن ضبط هذه الحدود من ملف <code dir="ltr">.env</code>
-        (<code dir="ltr">ALERT_DEBT_THRESHOLD_USD</code>، <code dir="ltr">ALERT_DEBT_IDLE_DAYS</code>،
-        <code dir="ltr">ALERT_EXPENSE_RATIO</code>، <code dir="ltr">ALERT_SEASON_IDLE_DAYS</code>).
-    </p>
+    
 </div>
 
 @if($alerts->isEmpty())
