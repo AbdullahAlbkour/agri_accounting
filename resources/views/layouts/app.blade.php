@@ -219,6 +219,15 @@
                     <span>الإعدادات والنسخ الاحتياطي</span>
                 </a>
             </li>
+
+            @if(auth()->user()?->isAdmin())
+            <li class="mt-3 pt-3 border-top border-secondary border-opacity-25">
+                <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>إدارة المزارعين</span>
+                </a>
+            </li>
+            @endif
         </ul>
     </aside>
 
@@ -232,9 +241,15 @@
                 <h5 class="mb-0 fw-bold text-secondary">النظام المحاسبي الزراعي</h5>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill d-none d-md-inline">
-                    <i class="fa-solid fa-circle text-success me-1 font-size-xs"></i> النظام نشط
-                </span>
+                @if(auth()->user()?->isAdmin())
+                    <span class="badge bg-dark-subtle text-dark border px-3 py-2 rounded-pill d-none d-md-inline">
+                        <i class="fa-solid fa-user-shield me-1"></i> وضع مدير النظام: تعرض كل بيانات المزارعين
+                    </span>
+                @else
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill d-none d-md-inline">
+                        <i class="fa-solid fa-shield-halved me-1"></i> بياناتك خاصة بحسابك
+                    </span>
+                @endif
 
                 @auth
                 <div class="dropdown">
@@ -242,6 +257,14 @@
                         <i class="fa-solid fa-circle-user text-success me-1"></i> {{ auth()->user()->name }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-start shadow">
+                        <li>
+                            <span class="dropdown-item-text small">
+                                <span class="badge {{ auth()->user()->isAdmin() ? 'bg-dark' : 'bg-success' }} rounded-pill">
+                                    {{ auth()->user()->roleLabel() }}
+                                </span>
+                            </span>
+                        </li>
+                        <li><span class="dropdown-item-text small text-muted font-monospace" dir="ltr">{{ '@' . (auth()->user()->username ?? '') }}</span></li>
                         <li><span class="dropdown-item-text small text-muted" dir="ltr">{{ auth()->user()->email }}</span></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>

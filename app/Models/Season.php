@@ -2,15 +2,42 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToUser;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Season extends Model
 {
-    use HasFactory;
+    use BelongsToUser, HasFactory;
 
     protected $guarded = [];
+
+    /**
+     * أنواع المواسم العامة المعتمدة في النظام.
+     */
+    public const TYPES = [
+        'winter' => 'شتوي',
+        'summer' => 'صيفي',
+        'autumn' => 'خريفي',
+        'spring' => 'ربيعي',
+    ];
+
+    /**
+     * اسم نوع الموسم بالعربية.
+     */
+    public function typeLabel(): string
+    {
+        return self::TYPES[$this->type] ?? 'غير محدد';
+    }
+
+    /**
+     * فلترة المواسم حسب النوع العام (صيفي / شتوي / خريفي / ربيعي).
+     */
+    public function scopeOfType(Builder $query, ?string $type): Builder
+    {
+        return $type ? $query->where('type', $type) : $query;
+    }
 
     public function crop()
     {

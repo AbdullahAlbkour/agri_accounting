@@ -21,7 +21,7 @@
 <!-- فلترة حسب الموسم -->
 <div class="card stat-card p-3 mb-3 bg-light border no-print">
     <form action="{{ route('expenses.index') }}" method="GET" class="row g-2 align-items-end">
-        <div class="col-md-8">
+        <div class="col-md-5">
             <label class="form-label fw-semibold mb-1">فلترة حسب الموسم الزراعي</label>
             <select name="season_id" class="form-select">
                 <option value="">-- كل المواسم --</option>
@@ -33,7 +33,17 @@
             </select>
         </div>
         <div class="col-md-4">
+            <label class="form-label fw-semibold mb-1">فلترة حسب نوع الموسم</label>
+            <select name="season_type" class="form-select">
+                <option value="">-- كل الأنواع (صيفي / شتوي / خريفي / ربيعي) --</option>
+                @foreach($seasonTypes as $value => $label)
+                    <option value="{{ $value }}" {{ request('season_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
             <button type="submit" class="btn btn-dark w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> عرض</button>
+            <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary" title="إلغاء الفلترة"><i class="fa-solid fa-rotate-left"></i></a>
         </div>
     </form>
 </div>
@@ -61,6 +71,9 @@
                     <td>{{ $expense->date }}</td>
                     <td>
                         <strong>{{ $expense->season->name ?? '-' }}</strong>
+                        @if($expense->season?->type)
+                            <span class="badge bg-info-subtle text-info ms-1">{{ $expense->season->typeLabel() }}</span>
+                        @endif
                         @if($expense->season && $expense->season->isClosed())
                             <span class="badge bg-secondary-subtle text-secondary ms-1" title="موسم مغلق - الحركات مجمّدة"><i class="fa-solid fa-lock"></i> مغلق</span>
                         @endif

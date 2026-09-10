@@ -12,6 +12,7 @@ class SeasonController extends Controller
     public function index(Request $request)
     {
         $status = $request->input('status');
+        $type = $request->input('type');
 
         $query = Season::with(['crop', 'field', 'expenses', 'sales']);
 
@@ -19,9 +20,12 @@ class SeasonController extends Controller
             $query->where('status', $status);
         }
 
-        $seasons = $query->latest()->paginate(10)->withQueryString();
+        $query->ofType(array_key_exists((string) $type, Season::TYPES) ? $type : null);
 
-        return view('seasons.index', compact('seasons', 'status'));
+        $seasons = $query->latest()->paginate(10)->withQueryString();
+        $seasonTypes = Season::TYPES;
+
+        return view('seasons.index', compact('seasons', 'status', 'type', 'seasonTypes'));
     }
 
     /**
@@ -31,12 +35,15 @@ class SeasonController extends Controller
     {
         $cropId = $request->input('crop_id');
         $year = $request->input('year');
+        $type = $request->input('type');
 
         $query = Season::with(['crop', 'field', 'expenses', 'sales'])->closed();
 
         if ($cropId) {
             $query->where('crop_id', $cropId);
         }
+
+        $query->ofType(array_key_exists((string) $type, Season::TYPES) ? $type : null);
 
         if ($year) {
             $query->whereYear('start_date', $year);
@@ -82,7 +89,9 @@ class SeasonController extends Controller
         $crops = Crop::orderBy('name')->get();
         $years = Season::closed()->get()->map(fn (Season $s) => $s->year())->filter()->unique()->sortDesc()->values();
 
-        return view('seasons.archive', compact('seasons', 'comparison', 'yearlyTotals', 'crops', 'years', 'cropId', 'year'));
+        $seasonTypes = Season::TYPES;
+
+        return view('seasons.archive', compact('seasons', 'comparison', 'yearlyTotals', 'crops', 'years', 'cropId', 'year', 'type', 'seasonTypes'));
     }
 
     public function create()
@@ -97,6 +106,7 @@ class SeasonController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'type' => 'nullable|in:'.implode(',', array_keys(Season::TYPES)),
             'crop_id' => 'required|exists:crops,id',
             'field_id' => 'required|exists:fields,id',
             'start_date' => 'required|date',
@@ -105,7 +115,12 @@ class SeasonController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        Season::create($request->all());
+        // المحصول والأرض يجب أن يكونا ضمن حساب المستخدم الحالي
+        if (! Crop::find($request->crop_id) || ! Field::find($request->field_id)) {
+            return back()->withInput()->with('error', 'المحصول أو الأرض المحددة غير موجودة ضمن حسابك.');
+        }
+
+        Season::create($request->only(['name', 'type', 'crop_id', 'field_id', 'start_date', 'end_date', 'status', 'notes']));
 
         return redirect()->route('seasons.index')->with('success', 'تم إنشاء الموسم الزراعي بنجاح.');
     }
@@ -139,6 +154,7 @@ class SeasonController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
+            'type' => 'nullable|in:'.implode(',', array_keys(Season::TYPES)),
             'crop_id' => 'required|exists:crops,id',
             'field_id' => 'required|exists:fields,id',
             'start_date' => 'required|date',
@@ -147,7 +163,11 @@ class SeasonController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $season->update($request->all());
+        if (! Crop::find($request->crop_id) || ! Field::find($request->field_id)) {
+            return back()->withInput()->with('error', 'المحصول أو الأرض المحددة غير موجودة ضمن حسابك.');
+        }
+
+        $season->update($request->only(['name', 'type', 'crop_id', 'field_id', 'start_date', 'end_date', 'status', 'notes']));
 
         return redirect()->route('seasons.index')->with('success', 'تم تحديث بيانات الموسم بنجاح.');
     }

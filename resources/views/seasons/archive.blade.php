@@ -35,7 +35,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label fw-semibold">السنة</label>
             <select name="year" class="form-select">
                 <option value="">-- كل السنوات --</option>
@@ -44,8 +44,17 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-4">
-            <button type="submit" class="btn btn-dark w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> عرض المقارنة</button>
+        <div class="col-md-3">
+            <label class="form-label fw-semibold">نوع الموسم</label>
+            <select name="type" class="form-select">
+                <option value="">-- كل الأنواع --</option>
+                @foreach($seasonTypes as $value => $label)
+                    <option value="{{ $value }}" {{ $type === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-dark w-100 fw-bold"><i class="fa-solid fa-filter me-1"></i> عرض</button>
         </div>
     </form>
 </div>
@@ -115,6 +124,7 @@
             <thead class="table-light">
                 <tr>
                     <th>الموسم</th>
+                    <th>النوع</th>
                     <th>المحصول</th>
                     <th>الأرض</th>
                     <th>من - إلى</th>
@@ -129,6 +139,7 @@
                 @foreach($seasons as $season)
                 <tr>
                     <td><strong><a href="{{ route('seasons.show', $season) }}" class="text-decoration-none text-success">{{ $season->name }}</a></strong></td>
+                    <td><span class="badge bg-info-subtle text-info px-3 py-1 rounded-pill">{{ $season->typeLabel() }}</span></td>
                     <td>{{ $season->crop->name ?? '-' }}</td>
                     <td>{{ $season->field->name ?? '-' }}</td>
                     <td class="small text-muted">{{ $season->start_date }} — {{ $season->end_date ?? '...' }}</td>

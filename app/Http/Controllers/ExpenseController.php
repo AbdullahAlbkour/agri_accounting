@@ -21,10 +21,16 @@ class ExpenseController extends Controller
             $query->where('season_id', $seasonId);
         }
 
+        // فلترة حسب نوع الموسم العام (شتوي / صيفي / خريفي / ربيعي)
+        if ($seasonType = $request->input('season_type')) {
+            $query->whereHas('season', fn ($q) => $q->where('type', $seasonType));
+        }
+
         $expenses = $query->latest()->paginate(15)->withQueryString();
         $seasons = Season::with('crop')->orderBy('name')->get();
+        $seasonTypes = Season::TYPES;
 
-        return view('expenses.index', compact('expenses', 'seasons'));
+        return view('expenses.index', compact('expenses', 'seasons', 'seasonTypes'));
     }
 
     public function create()
@@ -43,28 +49,23 @@ class ExpenseController extends Controller
             'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
-        $request->validate([
-            'season_id' => 'required|exists:seasons,id',
-            'category_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
-            'currency' => 'required|in:USD,TRY,SYP',
-            'exchange_rate' => 'nullable|numeric|min:0.0001',
-            'date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+        $request->validate($this->rules());
 
-        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+        // الموسم يُجلب ضمن نطاق المستخدم الحالي لمنع الوصول لبيانات مزارع آخر
+        $season = Season::find($request->season_id);
+
+        if (! $season) {
+            return back()->withInput()->with('error', 'الموسم المحدد غير موجود ضمن حسابك.');
+        }
+
+        if ($message = $this->closedSeasonMessage($season)) {
             return back()->withInput()->with('error', $message);
         }
 
-        // إيجاد التصنيف أو إنشاؤه تلقائياً
-        $category = ExpenseCategory::firstOrCreate([
-            'name' => trim($request->category_name),
-        ]);
-
         Expense::create([
-            'season_id' => $request->season_id,
-            'expense_category_id' => $category->id,
+            'user_id' => $season->user_id,
+            'season_id' => $season->id,
+            'expense_category_id' => $this->resolveCategory($request->category_name, $season->user_id)->id,
             'amount' => $request->amount,
             'currency' => $request->currency,
             'exchange_rate' => $request->exchange_rate ?: 1,
@@ -98,28 +99,22 @@ class ExpenseController extends Controller
             'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
-        $request->validate([
-            'season_id' => 'required|exists:seasons,id',
-            'category_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
-            'currency' => 'required|in:USD,TRY,SYP',
-            'exchange_rate' => 'nullable|numeric|min:0.0001',
-            'date' => 'required|date',
-            'notes' => 'nullable|string',
-        ]);
+        $request->validate($this->rules());
+
+        $season = Season::find($request->season_id);
+
+        if (! $season) {
+            return back()->withInput()->with('error', 'الموسم المحدد غير موجود ضمن حسابك.');
+        }
 
         // منع نقل المصروف إلى موسم مغلق
-        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+        if ($message = $this->closedSeasonMessage($season)) {
             return back()->withInput()->with('error', $message);
         }
 
-        $category = ExpenseCategory::firstOrCreate([
-            'name' => trim($request->category_name),
-        ]);
-
         $expense->update([
-            'season_id' => $request->season_id,
-            'expense_category_id' => $category->id,
+            'season_id' => $season->id,
+            'expense_category_id' => $this->resolveCategory($request->category_name, $expense->user_id ?? $season->user_id)->id,
             'amount' => $request->amount,
             'currency' => $request->currency,
             'exchange_rate' => $request->exchange_rate ?: 1,
@@ -139,5 +134,34 @@ class ExpenseController extends Controller
         $expense->delete();
 
         return redirect()->route('expenses.index')->with('success', 'تم حذف المصروف بنجاح.');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function rules(): array
+    {
+        return [
+            'season_id' => 'required|exists:seasons,id',
+            'category_name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+            'currency' => 'required|in:USD,TRY,SYP',
+            'exchange_rate' => 'nullable|numeric|min:0.0001',
+            'date' => 'required|date',
+            'notes' => 'nullable|string',
+        ];
+    }
+
+    /**
+     * إيجاد بند المصروف أو إنشاؤه ضمن حساب المالك نفسه.
+     */
+    protected function resolveCategory(string $name, ?int $ownerId): ExpenseCategory
+    {
+        $ownerId ??= auth()->id();
+
+        return ExpenseCategory::ownedBy($ownerId)->firstOrCreate(
+            ['name' => trim($name)],
+            ['user_id' => $ownerId]
+        );
     }
 }

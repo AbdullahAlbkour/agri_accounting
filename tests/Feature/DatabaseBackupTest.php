@@ -16,8 +16,10 @@ class DatabaseBackupTest extends TestCase
     {
         return User::create([
             'name' => 'مدير',
+            'username' => 'admin',
             'email' => 'admin@agri.local',
             'password' => Hash::make('secret123'),
+            'role' => User::ROLE_ADMIN,
         ]);
     }
 

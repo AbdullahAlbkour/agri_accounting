@@ -73,14 +73,24 @@ class BuyerPaymentController extends Controller
             'date.required' => 'تاريخ الدفعة مطلوب.',
         ]);
 
-        $sale = ! empty($validated['sale_id']) ? Sale::find($validated['sale_id']) : null;
+        $sale = null;
 
-        // التأكد من أن الفاتورة المختارة تعود لنفس التاجر
-        if ($sale && $sale->buyer_name !== $validated['buyer_name']) {
-            return back()->withInput()->with('error', 'الفاتورة المختارة لا تعود للتاجر المحدد.');
+        if (! empty($validated['sale_id'])) {
+            // الفاتورة تُجلب ضمن نطاق المستخدم الحالي لمنع الوصول لبيانات مزارع آخر
+            $sale = Sale::find($validated['sale_id']);
+
+            if (! $sale) {
+                return back()->withInput()->with('error', 'الفاتورة المحددة غير موجودة ضمن حسابك.');
+            }
+
+            // التأكد من أن الفاتورة المختارة تعود لنفس التاجر
+            if ($sale->buyer_name !== $validated['buyer_name']) {
+                return back()->withInput()->with('error', 'الفاتورة المختارة لا تعود للتاجر المحدد.');
+            }
         }
 
         $payment = BuyerPayment::create([
+            'user_id' => $sale?->user_id ?? $request->user()->id,
             'buyer_name' => $validated['buyer_name'],
             'sale_id' => $sale?->id,
             'season_id' => $sale?->season_id,
