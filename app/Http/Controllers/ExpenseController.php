@@ -2,35 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\GuardsClosedSeasons;
+use App\Http\Controllers\Concerns\NormalizesNumbers;
 use App\Models\Expense;
-use App\Models\Season;
 use App\Models\ExpenseCategory;
+use App\Models\Season;
 use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
-    public function index()
+    use GuardsClosedSeasons, NormalizesNumbers;
+
+    public function index(Request $request)
     {
-        $expenses = Expense::with(['season.crop', 'category'])->latest()->paginate(15);
-        return view('expenses.index', compact('expenses'));
+        $query = Expense::with(['season.crop', 'category']);
+
+        if ($seasonId = $request->input('season_id')) {
+            $query->where('season_id', $seasonId);
+        }
+
+        $expenses = $query->latest()->paginate(15)->withQueryString();
+        $seasons = Season::with('crop')->orderBy('name')->get();
+
+        return view('expenses.index', compact('expenses', 'seasons'));
     }
 
     public function create()
     {
-        $seasons = Season::where('status', 'active')->with('crop')->get();
+        // المواسم المغلقة لا تظهر: لا يمكن تسجيل مصاريف عليها
+        $seasons = Season::active()->with('crop')->get();
         $categories = ExpenseCategory::all();
+
         return view('expenses.create', compact('seasons', 'categories'));
     }
 
     public function store(Request $request)
     {
-        // تنظيف وتحويل الأرقام العربية إلى أرقام إنجليزية
-        $amount = str_replace(['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', ','], ['0','1','2','3','4','5','6','7','8','9', ''], (string) $request->amount);
-        $exchange_rate = str_replace(['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', ','], ['0','1','2','3','4','5','6','7','8','9', ''], (string) $request->exchange_rate);
-
         $request->merge([
-            'amount' => $amount,
-            'exchange_rate' => $exchange_rate ?: 1,
+            'amount' => $this->normalizeNumber($request->input('amount')),
+            'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
         $request->validate([
@@ -43,9 +53,13 @@ class ExpenseController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+            return back()->withInput()->with('error', $message);
+        }
+
         // إيجاد التصنيف أو إنشاؤه تلقائياً
         $category = ExpenseCategory::firstOrCreate([
-            'name' => trim($request->category_name)
+            'name' => trim($request->category_name),
         ]);
 
         Expense::create([
@@ -63,20 +77,25 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        $seasons = Season::all();
+        if ($message = $this->closedSeasonMessage($expense->season)) {
+            return redirect()->route('expenses.index')->with('error', $message);
+        }
+
+        $seasons = Season::active()->with('crop')->get();
         $categories = ExpenseCategory::all();
+
         return view('expenses.edit', compact('expense', 'seasons', 'categories'));
     }
 
     public function update(Request $request, Expense $expense)
     {
-        // تنظيف وتحويل الأرقام العربية إلى أرقام إنجليزية
-        $amount = str_replace(['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', ','], ['0','1','2','3','4','5','6','7','8','9', ''], (string) $request->amount);
-        $exchange_rate = str_replace(['٠','١','٢','٣','٤','٥','٦','٧','٨','٩', ','], ['0','1','2','3','4','5','6','7','8','9', ''], (string) $request->exchange_rate);
+        if ($message = $this->closedSeasonMessage($expense->season)) {
+            return redirect()->route('expenses.index')->with('error', $message);
+        }
 
         $request->merge([
-            'amount' => $amount,
-            'exchange_rate' => $exchange_rate ?: 1,
+            'amount' => $this->normalizeNumber($request->input('amount')),
+            'exchange_rate' => $this->normalizeNumber($request->input('exchange_rate')) ?: 1,
         ]);
 
         $request->validate([
@@ -89,8 +108,13 @@ class ExpenseController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // منع نقل المصروف إلى موسم مغلق
+        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+            return back()->withInput()->with('error', $message);
+        }
+
         $category = ExpenseCategory::firstOrCreate([
-            'name' => trim($request->category_name)
+            'name' => trim($request->category_name),
         ]);
 
         $expense->update([
@@ -108,7 +132,12 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
+        if ($message = $this->closedSeasonMessage($expense->season)) {
+            return back()->with('error', $message);
+        }
+
         $expense->delete();
+
         return redirect()->route('expenses.index')->with('success', 'تم حذف المصروف بنجاح.');
     }
 }

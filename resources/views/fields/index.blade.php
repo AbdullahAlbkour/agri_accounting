@@ -74,5 +74,11 @@
             </tbody>
         </table>
     </div>
+
+    @if($fields->hasPages())
+    <div class="card-footer bg-white py-3">
+        {{ $fields->links() }}
+    </div>
+    @endif
 </div>
 @endsection

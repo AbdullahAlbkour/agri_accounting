@@ -4,11 +4,16 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1"><i class="fa-solid fa-calendar-days text-success me-2"></i>المواسم الزراعية</h4>
-        <p class="text-muted mb-0">إدارة ومتابعة المواسم الزراعية النشطة والمكتملة</p>
+        <p class="text-muted mb-0">إدارة ومتابعة المواسم الزراعية النشطة والمغلقة (المؤرشفة)</p>
     </div>
-    <a href="{{ route('seasons.create') }}" class="btn btn-success px-4 py-2 rounded-pill fw-bold">
-        <i class="fa-solid fa-plus me-1"></i> فتح موسم زراعي جديد
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('seasons.archive') }}" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-bold">
+            <i class="fa-solid fa-box-archive me-1"></i> الأرشيف والمقارنات
+        </a>
+        <a href="{{ route('seasons.create') }}" class="btn btn-success px-4 py-2 rounded-pill fw-bold">
+            <i class="fa-solid fa-plus me-1"></i> فتح موسم زراعي جديد
+        </a>
+    </div>
 </div>
 
 @if(session('success'))
@@ -17,6 +22,13 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
+
+<!-- فلترة حسب الحالة -->
+<div class="btn-group mb-3 no-print" role="group">
+    <a href="{{ route('seasons.index') }}" class="btn btn-sm {{ $status ? 'btn-outline-dark' : 'btn-dark' }}">كل المواسم</a>
+    <a href="{{ route('seasons.index', ['status' => 'active']) }}" class="btn btn-sm {{ $status === 'active' ? 'btn-success' : 'btn-outline-success' }}">النشطة فقط</a>
+    <a href="{{ route('seasons.index', ['status' => 'closed']) }}" class="btn btn-sm {{ $status === 'closed' ? 'btn-secondary' : 'btn-outline-secondary' }}">المغلقة (المؤرشفة)</a>
+</div>
 
 <div class="card stat-card">
     <div class="table-responsive">
@@ -31,21 +43,23 @@
                     <th>المصاريف ($)</th>
                     <th>المبيعات ($)</th>
                     <th>صافي الربح ($)</th>
-                    <th style="width: 170px;" class="text-center">الإجراءات</th>
+                    <th style="width: 210px;" class="text-center">الإجراءات</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($seasons as $season)
-                <tr>
+                <tr class="{{ $season->isClosed() ? 'table-light text-muted' : '' }}">
                     <td>{{ $loop->iteration }}</td>
                     <td><strong><a href="{{ route('seasons.show', $season) }}" class="text-decoration-none text-success">{{ $season->name }}</a></strong></td>
                     <td>{{ $season->crop->name ?? '-' }}</td>
                     <td>{{ $season->field->name ?? '-' }}</td>
                     <td>
-                        @if($season->status === 'active')
-                            <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">نشط</span>
+                        @if($season->isClosed())
+                            <span class="badge bg-secondary-subtle text-secondary px-3 py-1 rounded-pill">
+                                <i class="fa-solid fa-lock me-1"></i> مغلق / مؤرشف
+                            </span>
                         @else
-                            <span class="badge bg-secondary-subtle text-secondary px-3 py-1 rounded-pill">مغلق</span>
+                            <span class="badge bg-success-subtle text-success px-3 py-1 rounded-pill">نشط</span>
                         @endif
                     </td>
                     <td class="text-danger font-monospace">${{ number_format($season->totalExpensesUSD(), 2) }}</td>
@@ -58,26 +72,48 @@
                             <a href="{{ route('seasons.show', $season) }}" class="btn btn-sm btn-outline-success" title="عرض التفاصيل">
                                 <i class="fa-solid fa-eye"></i>
                             </a>
-                            <a href="{{ route('seasons.edit', $season) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </a>
-                            <form action="{{ route('seasons.destroy', $season) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الموسم؟')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
+
+                            @if($season->isClosed())
+                                <form action="{{ route('seasons.reopen', $season) }}" method="POST" class="d-inline" onsubmit="return confirm('إعادة فتح الموسم تسمح بتعديل مبيعاته ومصاريفه مجدداً. هل تريد المتابعة؟')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="إعادة فتح الموسم">
+                                        <i class="fa-solid fa-lock-open"></i>
+                                    </button>
+                                </form>
+                            @else
+                                <a href="{{ route('seasons.edit', $season) }}" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form action="{{ route('seasons.close', $season) }}" method="POST" class="d-inline" onsubmit="return confirm('سيتم إغلاق الموسم وأرشفته، ولن يمكن تعديل مبيعاته أو مصاريفه. هل أنت متأكد؟')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-dark" title="إغلاق وأرشفة الموسم">
+                                        <i class="fa-solid fa-lock"></i>
+                                    </button>
+                                </form>
+                                <form action="{{ route('seasons.destroy', $season) }}" method="POST" class="d-inline" onsubmit="return confirm('هل أنت متأكد من حذف هذا الموسم؟')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="حذف">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center py-4 text-muted">لا توجد مواسم زراعية مسجلة بعد. اضغط على "فتح موسم زراعي جديد" للبدء.</td>
+                    <td colspan="9" class="text-center py-4 text-muted">لا توجد مواسم زراعية مطابقة. اضغط على "فتح موسم زراعي جديد" للبدء.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+
+    @if($seasons->hasPages())
+    <div class="card-footer bg-white py-3">
+        {{ $seasons->links() }}
+    </div>
+    @endif
 </div>
 @endsection

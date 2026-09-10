@@ -5,21 +5,30 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * إنشاء حساب المدير الافتراضي للنظام.
+     *
+     * يمكن تخصيص البيانات عبر متغيرات البيئة:
+     * ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $email = env('ADMIN_EMAIL', 'admin@agri.local');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        User::updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => env('ADMIN_NAME', 'مدير النظام'),
+                'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),
+            ]
+        );
+
+        $this->command?->info('تم إنشاء/تحديث حساب المدير: '.$email);
     }
 }
