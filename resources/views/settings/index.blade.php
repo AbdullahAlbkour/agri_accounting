@@ -10,6 +10,7 @@
 
 <div class="row g-4">
     <div class="col-lg-7">
+        @if(auth()->user()->isAdmin())
         <div class="card stat-card p-4 h-100">
             <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-database me-2"></i>نسخة احتياطية من قاعدة البيانات</h5>
 
@@ -46,9 +47,20 @@
 
             <p class="text-muted small mt-3 mb-0">
                 <i class="fa-solid fa-circle-info me-1"></i>
-                يُنصح بأخذ نسخة احتياطية بشكل دوري (أسبوعياً على الأقل) وقبل إغلاق أي موسم زراعي.
+                النسخة تشمل بيانات كل المزارعين، لذلك التنزيل متاح لمدير النظام فقط.
+                يُنصح بأخذ نسخة دورية (أسبوعياً على الأقل) وقبل إغلاق أي موسم زراعي.
             </p>
         </div>
+        @else
+        <div class="card stat-card p-4 h-100">
+            <h5 class="fw-bold text-secondary mb-3"><i class="fa-solid fa-shield-halved me-2"></i>خصوصية بياناتك</h5>
+            <p class="text-muted mb-0">
+                كل ما تسجّله في النظام (المحاصيل، الأراضي، المواسم، المصاريف، المبيعات، وسندات القبض)
+                مرتبط بحسابك وحدك، ولا يظهر لأي مزارع آخر. النسخ الاحتياطي الكامل لقاعدة البيانات
+                مخصص لمدير النظام.
+            </p>
+        </div>
+        @endif
     </div>
 
     <div class="col-lg-5">
@@ -76,12 +88,14 @@
                     <div class="p-3 bg-light rounded border">
                         <span class="text-muted d-block">الاسم</span>
                         <strong>{{ auth()->user()->name ?? '-' }}</strong>
+                        <span class="badge {{ auth()->user()->isAdmin() ? 'bg-dark' : 'bg-success' }} rounded-pill ms-1">{{ auth()->user()->roleLabel() }}</span>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="p-3 bg-light rounded border">
-                        <span class="text-muted d-block">البريد الإلكتروني</span>
-                        <strong dir="ltr">{{ auth()->user()->email ?? '-' }}</strong>
+                        <span class="text-muted d-block">اسم المستخدم / البريد</span>
+                        <strong dir="ltr" class="d-block font-monospace">{{ '@' . (auth()->user()->username ?? '-') }}</strong>
+                        <span dir="ltr" class="small text-muted">{{ auth()->user()->email ?? '-' }}</span>
                     </div>
                 </div>
                 <div class="col-md-4">

@@ -18,29 +18,45 @@ class LoginController extends Controller
     }
 
     /**
-     * محاولة تسجيل الدخول باسم المستخدم (البريد) وكلمة المرور.
+     * محاولة تسجيل الدخول باسم المستخدم أو البريد الإلكتروني وكلمة المرور.
      */
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|string',
+            'login' => 'required|string',
             'password' => 'required|string',
         ], [
-            'email.required' => 'الرجاء إدخال اسم المستخدم أو البريد الإلكتروني.',
+            'login.required' => 'الرجاء إدخال اسم المستخدم أو البريد الإلكتروني.',
             'password.required' => 'الرجاء إدخال كلمة المرور.',
         ]);
 
-        // يسمح بتسجيل الدخول عبر البريد الإلكتروني أو اسم المستخدم
-        $field = filter_var($credentials['email'], FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+        // يسمح بتسجيل الدخول عبر البريد الإلكتروني أو اسم المستخدم أو الاسم الكامل
+        $identifier = $credentials['login'];
+        $fields = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? ['email'] : ['username', 'name'];
 
-        $attempt = Auth::attempt([
-            $field => $credentials['email'],
-            'password' => $credentials['password'],
-        ], $request->boolean('remember'));
+        $authenticated = false;
 
-        if (! $attempt) {
+        foreach ($fields as $field) {
+            if (Auth::attempt([$field => $identifier, 'password' => $credentials['password']], $request->boolean('remember'))) {
+                $authenticated = true;
+                break;
+            }
+        }
+
+        if (! $authenticated) {
             throw ValidationException::withMessages([
-                'email' => 'بيانات الدخول غير صحيحة. تأكد من اسم المستخدم وكلمة المرور.',
+                'login' => 'بيانات الدخول غير صحيحة. تأكد من اسم المستخدم وكلمة المرور.',
+            ]);
+        }
+
+        // الحسابات الموقوفة لا يُسمح لها بالدخول
+        if (! Auth::user()->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'login' => 'هذا الحساب موقوف حالياً. يرجى مراجعة مدير النظام.',
             ]);
         }
 

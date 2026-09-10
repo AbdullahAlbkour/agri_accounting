@@ -20,14 +20,21 @@ class SaleController extends Controller
             $query->where('season_id', $seasonId);
         }
 
+        // فلترة حسب نوع الموسم العام (شتوي / صيفي / خريفي / ربيعي)
+        if ($seasonType = $request->input('season_type')) {
+            $query->whereHas('season', fn ($q) => $q->where('type', $seasonType));
+        }
+
         if ($buyer = $request->input('buyer_name')) {
             $query->where('buyer_name', $buyer);
         }
 
         $sales = $query->latest()->paginate(15)->withQueryString();
         $seasons = Season::with('crop')->orderBy('name')->get();
+        $seasonTypes = Season::TYPES;
+        $buyers = Sale::select('buyer_name')->distinct()->orderBy('buyer_name')->pluck('buyer_name');
 
-        return view('sales.index', compact('sales', 'seasons'));
+        return view('sales.index', compact('sales', 'seasons', 'seasonTypes', 'buyers'));
     }
 
     public function create()
@@ -61,7 +68,14 @@ class SaleController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+        // الموسم يُجلب ضمن نطاق المستخدم الحالي لمنع الوصول لبيانات مزارع آخر
+        $season = Season::find($request->season_id);
+
+        if (! $season) {
+            return back()->withInput()->with('error', 'الموسم المحدد غير موجود ضمن حسابك.');
+        }
+
+        if ($message = $this->closedSeasonMessage($season)) {
             return back()->withInput()->with('error', $message);
         }
 
@@ -73,7 +87,8 @@ class SaleController extends Controller
         $remaining_amount = max(0, $total_price - $request->paid_amount);
 
         Sale::create([
-            'season_id' => $request->season_id,
+            'user_id' => $season->user_id,
+            'season_id' => $season->id,
             'buyer_name' => $request->buyer_name,
             'quantity' => $totalWeightInTons,
             'unit' => 'طن',
@@ -132,8 +147,14 @@ class SaleController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $season = Season::find($request->season_id);
+
+        if (! $season) {
+            return back()->withInput()->with('error', 'الموسم المحدد غير موجود ضمن حسابك.');
+        }
+
         // منع نقل الفاتورة إلى موسم مغلق
-        if ($message = $this->closedSeasonMessageById($request->season_id)) {
+        if ($message = $this->closedSeasonMessage($season)) {
             return back()->withInput()->with('error', $message);
         }
 

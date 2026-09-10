@@ -15,8 +15,10 @@ class AuthenticationTest extends TestCase
     {
         return User::create([
             'name' => 'مدير النظام',
+            'username' => 'admin',
             'email' => 'admin@agri.local',
             'password' => Hash::make('secret123'),
+            'role' => User::ROLE_ADMIN,
         ]);
     }
 
@@ -33,7 +35,7 @@ class AuthenticationTest extends TestCase
         $user = $this->admin();
 
         $this->post(route('login.attempt'), [
-            'email' => 'admin@agri.local',
+            'login' => 'admin@agri.local',
             'password' => 'secret123',
         ])->assertRedirect(route('dashboard'));
 
@@ -45,7 +47,7 @@ class AuthenticationTest extends TestCase
         $this->admin();
 
         $this->post(route('login.attempt'), [
-            'email' => 'مدير النظام',
+            'login' => 'admin',
             'password' => 'secret123',
         ])->assertRedirect(route('dashboard'));
 
@@ -57,9 +59,9 @@ class AuthenticationTest extends TestCase
         $this->admin();
 
         $this->post(route('login.attempt'), [
-            'email' => 'admin@agri.local',
+            'login' => 'admin@agri.local',
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
         $this->assertGuest();
     }

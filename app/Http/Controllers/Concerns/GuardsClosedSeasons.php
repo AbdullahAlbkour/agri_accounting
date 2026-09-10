@@ -17,12 +17,4 @@ trait GuardsClosedSeasons
 
         return null;
     }
-
-    /**
-     * التحقق من موسم عبر معرّفه.
-     */
-    protected function closedSeasonMessageById($seasonId): ?string
-    {
-        return $this->closedSeasonMessage($seasonId ? Season::find($seasonId) : null);
-    }
 }

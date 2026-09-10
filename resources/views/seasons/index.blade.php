@@ -23,11 +23,24 @@
 </div>
 @endif
 
-<!-- فلترة حسب الحالة -->
-<div class="btn-group mb-3 no-print" role="group">
-    <a href="{{ route('seasons.index') }}" class="btn btn-sm {{ $status ? 'btn-outline-dark' : 'btn-dark' }}">كل المواسم</a>
-    <a href="{{ route('seasons.index', ['status' => 'active']) }}" class="btn btn-sm {{ $status === 'active' ? 'btn-success' : 'btn-outline-success' }}">النشطة فقط</a>
-    <a href="{{ route('seasons.index', ['status' => 'closed']) }}" class="btn btn-sm {{ $status === 'closed' ? 'btn-secondary' : 'btn-outline-secondary' }}">المغلقة (المؤرشفة)</a>
+<!-- فلترة حسب الحالة والنوع -->
+<div class="d-flex flex-wrap gap-3 align-items-center mb-3 no-print">
+    <div class="btn-group" role="group">
+        <a href="{{ route('seasons.index', ['type' => $type]) }}" class="btn btn-sm {{ $status ? 'btn-outline-dark' : 'btn-dark' }}">كل المواسم</a>
+        <a href="{{ route('seasons.index', ['status' => 'active', 'type' => $type]) }}" class="btn btn-sm {{ $status === 'active' ? 'btn-success' : 'btn-outline-success' }}">النشطة فقط</a>
+        <a href="{{ route('seasons.index', ['status' => 'closed', 'type' => $type]) }}" class="btn btn-sm {{ $status === 'closed' ? 'btn-secondary' : 'btn-outline-secondary' }}">المغلقة (المؤرشفة)</a>
+    </div>
+
+    <form action="{{ route('seasons.index') }}" method="GET" class="d-flex gap-2 align-items-center">
+        <input type="hidden" name="status" value="{{ $status }}">
+        <label class="form-label fw-semibold mb-0">نوع الموسم:</label>
+        <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">كل الأنواع</option>
+            @foreach($seasonTypes as $value => $label)
+                <option value="{{ $value }}" {{ $type === $value ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+        </select>
+    </form>
 </div>
 
 <div class="card stat-card">
@@ -37,6 +50,7 @@
                 <tr>
                     <th style="width: 60px;">#</th>
                     <th>اسم الموسم</th>
+                    <th>النوع</th>
                     <th>المحصول</th>
                     <th>الأرض</th>
                     <th>الحالة</th>
@@ -51,6 +65,7 @@
                 <tr class="{{ $season->isClosed() ? 'table-light text-muted' : '' }}">
                     <td>{{ $loop->iteration }}</td>
                     <td><strong><a href="{{ route('seasons.show', $season) }}" class="text-decoration-none text-success">{{ $season->name }}</a></strong></td>
+                    <td><span class="badge bg-info-subtle text-info px-3 py-1 rounded-pill">{{ $season->typeLabel() }}</span></td>
                     <td>{{ $season->crop->name ?? '-' }}</td>
                     <td>{{ $season->field->name ?? '-' }}</td>
                     <td>
@@ -103,7 +118,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center py-4 text-muted">لا توجد مواسم زراعية مطابقة. اضغط على "فتح موسم زراعي جديد" للبدء.</td>
+                    <td colspan="10" class="text-center py-4 text-muted">لا توجد مواسم زراعية مطابقة. اضغط على "فتح موسم زراعي جديد" للبدء.</td>
                 </tr>
                 @endforelse
             </tbody>

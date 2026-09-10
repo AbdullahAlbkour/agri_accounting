@@ -54,6 +54,10 @@
         <div class="alert alert-success py-2">{{ session('success') }}</div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger py-2">{{ session('error') }}</div>
+    @endif
+
     @if($errors->any())
         <div class="alert alert-danger py-2">
             <ul class="mb-0 ps-3">
@@ -71,7 +75,7 @@
             <label class="form-label fw-semibold">اسم المستخدم أو البريد الإلكتروني</label>
             <div class="input-group">
                 <span class="input-group-text bg-light"><i class="fa-solid fa-user"></i></span>
-                <input type="text" name="email" class="form-control" value="{{ old('email') }}" placeholder="admin@agri.local" required autofocus>
+                <input type="text" name="login" class="form-control" value="{{ old('login') }}" placeholder="username أو admin@agri.local" required autofocus>
             </div>
         </div>
 
@@ -86,15 +90,25 @@
             </div>
         </div>
 
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
-            <label class="form-check-label" for="remember">تذكّرني على هذا الجهاز</label>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1" {{ old('remember') ? 'checked' : '' }}>
+                <label class="form-check-label" for="remember">تذكّرني على هذا الجهاز</label>
+            </div>
+            <a href="{{ route('password.request') }}" class="small text-decoration-none">نسيت كلمة المرور؟</a>
         </div>
 
         <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill">
             <i class="fa-solid fa-right-to-bracket me-1"></i> تسجيل الدخول
         </button>
     </form>
+
+    <hr class="my-4">
+
+    <p class="text-center text-muted mb-0">
+        ليس لديك حساب؟
+        <a href="{{ route('register') }}" class="fw-bold text-decoration-none">أنشئ حساب مزارع جديد</a>
+    </p>
 </div>
 
 <script>

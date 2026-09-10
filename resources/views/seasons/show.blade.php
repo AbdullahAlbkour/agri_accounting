@@ -4,7 +4,11 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1"><i class="fa-solid fa-wheat-awn text-success me-2"></i>تفاصيل وتقرير: {{ $season->name }}</h4>
-        <p class="text-muted mb-0">المحصول: <strong>{{ $season->crop->name ?? '-' }}</strong> | الأرض: <strong>{{ $season->field->name ?? '-' }}</strong></p>
+        <p class="text-muted mb-0">
+            المحصول: <strong>{{ $season->crop->name ?? '-' }}</strong> |
+            الأرض: <strong>{{ $season->field->name ?? '-' }}</strong> |
+            النوع: <strong>{{ $season->typeLabel() }}</strong>
+        </p>
     </div>
     <div class="d-flex gap-2 no-print">
         <button onclick="window.print()" class="btn btn-outline-secondary px-4 rounded-pill">

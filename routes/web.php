@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BuyerPaymentController;
 use App\Http\Controllers\CropController;
@@ -14,12 +18,20 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| مسارات المصادقة (تسجيل الدخول والخروج)
+| مسارات المصادقة (تسجيل الدخول، إنشاء حساب، استعادة كلمة المرور)
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.attempt');
+
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register'])->name('register.store');
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
 });
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
@@ -47,9 +59,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/buyer-payments/{buyerPayment}/receipt', [BuyerPaymentController::class, 'receipt'])->name('buyer-payments.receipt');
     Route::delete('/buyer-payments/{buyerPayment}', [BuyerPaymentController::class, 'destroy'])->name('buyer-payments.destroy');
 
-    // الإعدادات والنسخ الاحتياطي
+    // الإعدادات (النسخ الاحتياطي لكامل قاعدة البيانات مخصص لمدير النظام)
     Route::get('/settings', [BackupController::class, 'index'])->name('settings.index');
-    Route::get('/settings/backup/download', [BackupController::class, 'download'])->name('backup.download');
+    Route::get('/settings/backup/download', [BackupController::class, 'download'])
+        ->middleware('admin')
+        ->name('backup.download');
+
+    // لوحة تحكم مدير النظام: إدارة حسابات المزارعين
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::post('/users/{user}/toggle-active', [AdminUserController::class, 'toggleActive'])->name('users.toggle-active');
+        Route::resource('users', AdminUserController::class);
+    });
 
     // هذه المتحكمات لا تملك صفحة عرض مفردة (show)، والتفاصيل تُعرض ضمن صفحة الموسم
     Route::resource('crops', CropController::class)->except(['show']);
