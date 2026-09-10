@@ -111,6 +111,7 @@
                             <th>التاريخ</th>
                             <th>البند</th>
                             <th>المبلغ</th>
+                            <th class="text-center">المرفق</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -119,9 +120,12 @@
                             <td>{{ $expense->date }}</td>
                             <td>{{ $expense->category->name ?? 'عام' }}</td>
                             <td class="font-monospace text-danger">{{ number_format($expense->amount, 2) }} {{ $expense->currency }}</td>
+                            <td class="text-center">
+                                @include('partials.receipt-thumb', ['model' => $expense, 'title' => 'فاتورة: ' . ($expense->category->name ?? 'مصروف')])
+                            </td>
                         </tr>
                         @empty
-                        <tr><td colspan="3" class="text-center py-3 text-muted">لا توجد مصاريف مسجلة لهذا الموسم</td></tr>
+                        <tr><td colspan="4" class="text-center py-3 text-muted">لا توجد مصاريف مسجلة لهذا الموسم</td></tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -6,7 +6,7 @@
         <div class="card stat-card p-4">
             <h5 class="fw-bold mb-3 text-danger"><i class="fa-solid fa-plus-circle me-2"></i>تسجيل مصروف جديد</h5>
             
-            <form action="{{ route('expenses.store') }}" method="POST">
+            <form action="{{ route('expenses.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -61,6 +61,19 @@
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">تفاصيل / ملاحظات إضافية</label>
                         <input type="text" name="notes" class="form-control" value="{{ old('notes') }}" placeholder="مثال: شراء كيسين سماد يوريا، سقاية أرض السهل...">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">
+                            <i class="fa-solid fa-paperclip me-1"></i> صورة فاتورة الشراء / إيصال الصرف (اختياري)
+                        </label>
+                        <input type="file" name="receipt_image" accept="image/*,application/pdf"
+                               class="form-control @error('receipt_image') is-invalid @enderror">
+                        <small class="text-muted">
+                            الصيغ المدعومة: JPG, PNG, WEBP, GIF, PDF — بحد أقصى
+                            {{ round(config('agri.attachments.max_size_kb') / 1024, 1) }} ميغابايت.
+                        </small>
+                        @error('receipt_image') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
                 </div>
 

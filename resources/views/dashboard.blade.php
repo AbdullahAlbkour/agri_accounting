@@ -31,6 +31,37 @@
     </div>
 </div>
 
+<!-- التنبيهات والإشعارات الذكية -->
+@if($alertsCount > 0)
+<div class="card stat-card p-4 mb-4 border-start border-4 border-warning">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-warning mb-0">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>التنبيهات الذكية
+            <span class="badge bg-danger rounded-pill">{{ $alertsCount }}</span>
+        </h5>
+        <a href="{{ route('alerts.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 no-print">
+            عرض الكل <i class="fa-solid fa-arrow-left ms-1"></i>
+        </a>
+    </div>
+
+    <div class="row g-3">
+        @foreach($topAlerts as $alert)
+        <div class="col-lg-6">
+            <a href="{{ $alert['url'] }}" class="text-decoration-none">
+                <div class="d-flex gap-3 p-3 rounded border h-100 bg-{{ $alert['level'] }}-subtle">
+                    <i class="fa-solid {{ $alert['icon'] }} fa-lg text-{{ $alert['level'] }} mt-1"></i>
+                    <div>
+                        <div class="fw-bold text-dark">{{ $alert['title'] }}</div>
+                        <div class="text-muted small">{{ $alert['message'] }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 <!-- المخططات البيانية التفاعلية -->
 <div class="row g-4 mb-4">
     <div class="col-lg-7">

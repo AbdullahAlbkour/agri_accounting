@@ -166,6 +166,15 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('alerts.index') }}" class="{{ request()->routeIs('alerts.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>التنبيهات والإشعارات</span>
+                    @if(($navbarAlerts ?? collect())->isNotEmpty())
+                        <span class="badge bg-danger rounded-pill ms-auto">{{ ($navbarAlerts ?? collect())->count() }}</span>
+                    @endif
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('seasons.index') }}" class="{{ request()->routeIs('seasons.*') && ! request()->routeIs('seasons.archive') ? 'active' : '' }}">
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>المواسم الزراعية</span>
@@ -252,6 +261,57 @@
                 @endif
 
                 @auth
+                @php($navbarAlerts = $navbarAlerts ?? collect())
+                <div class="dropdown">
+                    <button class="btn btn-light border rounded-circle position-relative px-3 py-2" type="button" data-bs-toggle="dropdown" title="التنبيهات والإشعارات">
+                        <i class="fa-solid fa-bell {{ $navbarAlerts->isNotEmpty() ? 'text-danger' : 'text-secondary' }}"></i>
+                        @if($navbarAlerts->isNotEmpty())
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ $navbarAlerts->count() > 9 ? '9+' : $navbarAlerts->count() }}
+                                <span class="visually-hidden">تنبيهات</span>
+                            </span>
+                        @endif
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-start shadow" style="min-width: 340px; max-width: 92vw;">
+                        <li class="dropdown-header fw-bold d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> التنبيهات الذكية</span>
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ $navbarAlerts->count() }}</span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+
+                        @forelse($navbarAlerts->take(5) as $alert)
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ $alert['url'] }}" style="white-space: normal;">
+                                <div class="d-flex gap-2">
+                                    <i class="fa-solid {{ $alert['icon'] }} text-{{ $alert['level'] }} mt-1"></i>
+                                    <div>
+                                        <div class="fw-semibold small">{{ $alert['title'] }}</div>
+                                        <div class="text-muted" style="font-size: .78rem;">{{ $alert['message'] }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        @empty
+                        <li class="px-3 py-3 text-center text-muted small">
+                            <i class="fa-solid fa-circle-check text-success me-1"></i> لا توجد تنبيهات حالياً
+                        </li>
+                        @endforelse
+
+                        @if($navbarAlerts->count() > 5)
+                        <li><hr class="dropdown-divider"></li>
+                        <li class="px-3 small text-muted">و {{ $navbarAlerts->count() - 5 }} تنبيهات أخرى...</li>
+                        @endif
+
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-center fw-semibold" href="{{ route('alerts.index') }}">
+                                عرض كل التنبيهات
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
                 <div class="dropdown">
                     <button class="btn btn-light border rounded-pill px-3 dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-circle-user text-success me-1"></i> {{ auth()->user()->name }}
@@ -306,7 +366,52 @@
     </div>
 
     <!-- Bootstrap Bundle JS -->
+    <!-- نافذة تكبير المرفقات (صور الفواتير والسندات) -->
+    <div class="modal fade" id="attachmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-bold" id="attachmentModalTitle">المرفق</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center bg-light">
+                    <img id="attachmentModalImage" src="" alt="المرفق" class="img-fluid rounded" style="max-height: 70vh;">
+                </div>
+                <div class="modal-footer">
+                    <a id="attachmentModalDownload" href="#" download class="btn btn-success fw-bold rounded-pill px-4">
+                        <i class="fa-solid fa-download me-1"></i> تحميل المرفق
+                    </a>
+                    <a id="attachmentModalOpen" href="#" target="_blank" class="btn btn-outline-secondary rounded-pill px-4">
+                        فتح في تبويب جديد
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // فتح المرفق مكبّراً داخل النافذة المنبثقة
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-attachment-url]');
+
+            if (!trigger) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const url = trigger.dataset.attachmentUrl;
+            const title = trigger.dataset.attachmentTitle || 'المرفق';
+
+            document.getElementById('attachmentModalImage').src = url;
+            document.getElementById('attachmentModalTitle').textContent = title;
+            document.getElementById('attachmentModalDownload').href = url;
+            document.getElementById('attachmentModalOpen').href = url;
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('attachmentModal')).show();
+        });
+    </script>
     <!-- Chart.js للمخططات البيانية التفاعلية -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     @stack('scripts')

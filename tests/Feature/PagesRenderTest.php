@@ -105,6 +105,7 @@ class PagesRenderTest extends TestCase
             'إضافة محصول' => ['crops.create'],
             'سندات القبض' => ['buyer-payments.index'],
             'التقارير' => ['reports.index'],
+            'التنبيهات' => ['alerts.index'],
             'الإعدادات' => ['settings.index'],
         ];
     }

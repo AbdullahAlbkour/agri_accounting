@@ -7,11 +7,12 @@ use App\Models\Expense;
 use App\Models\Field;
 use App\Models\Sale;
 use App\Models\Season;
+use App\Services\AlertService;
 use App\Services\BuyerAccountService;
 
 class DashboardController extends Controller
 {
-    public function __construct(private BuyerAccountService $accounts) {}
+    public function __construct(private BuyerAccountService $accounts, private AlertService $alertService) {}
 
     public function index()
     {
@@ -87,6 +88,11 @@ class DashboardController extends Controller
             ->filter(fn ($row) => $row['remaining_usd'] > 0)
             ->take(5);
 
+        // التنبيهات الذكية (ديون متأخرة وسقف مصاريف)
+        $alerts = $this->alertService->all();
+        $alertsCount = $alerts->count();
+        $topAlerts = $alerts->take(4);
+
         $recentExpenses = Expense::with(['season.crop', 'category'])->latest()->take(5)->get();
         $recentSales = Sale::with('season.crop')->latest()->take(5)->get();
 
@@ -103,6 +109,8 @@ class DashboardController extends Controller
             'cropsChart',
             'expensesChart',
             'topDebtors',
+            'alertsCount',
+            'topAlerts',
             'recentExpenses',
             'recentSales'
         ));
